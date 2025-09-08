@@ -11,6 +11,7 @@ import ErrorMessage from './components/ErrorMessage';
 import ImageEditorCanvas from './components/ImageEditorCanvas';
 // Fix: Removed unused and non-existent 'fileToDataUrl' import.
 import { dataUrlToFile, embedWatermark, loadImage, resizeImageToMatch, downloadImage } from './utils/fileUtils';
+import { autoSaveImage } from './utils/imageStorage';
 import ImagePreviewModal from './components/ImagePreviewModal';
 import MultiImageUploader from './components/MultiImageUploader';
 import HistoryPanel from './components/HistoryPanel';
@@ -181,6 +182,11 @@ const App: React.FC = () => {
                 secondaryImageUrl: stepOneResult.imageUrl, // Store intermediate result
             };
             
+            // 自动保存生成的图片到服务器 data 文件夹
+            if (finalResult.imageUrl) {
+                autoSaveImage(finalResult.imageUrl, selectedTransformation.title, 'two-step');
+            }
+            
             setGeneratedContent(finalResult);
             setHistory(prev => [finalResult, ...prev]);
 
@@ -202,6 +208,11 @@ const App: React.FC = () => {
 
             if (result.imageUrl) {
                 result.imageUrl = await embedWatermark(result.imageUrl, "Nano Banana Supermarket");
+            }
+
+            // 自动保存生成的图片到服务器 data 文件夹
+            if (result.imageUrl) {
+                autoSaveImage(result.imageUrl, selectedTransformation.title, 'single');
             }
 
             setGeneratedContent(result);
