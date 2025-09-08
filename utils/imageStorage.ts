@@ -57,16 +57,8 @@ export async function saveImageToServer(imageDataUrl: string, filename?: string)
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const finalFilename = filename || `generated-image-${timestamp}.png`;
     
-    // 检查是否在服务器环境中
-    if (typeof window !== 'undefined') {
-        // 浏览器环境，使用下载功能
-        console.log('Browser environment detected, downloading image instead of server save');
-        await downloadImageInBrowser(imageDataUrl, finalFilename);
-        return finalFilename;
-    }
-    
     try {
-        // Node.js/服务器环境
+        // 尝试服务器端保存（Node.js 环境）
         const fs = await import('fs');
         const path = await import('path');
         
@@ -97,7 +89,16 @@ export async function saveImageToServer(imageDataUrl: string, filename?: string)
         console.log(`Image saved to server: ${outputPath}`);
         return outputPath;
     } catch (error) {
-        console.error('Error saving image to server:', error);
+        console.log('Server-side save failed, probably in browser environment:', error);
+        
+        // 只有在服务器端保存失败时才使用浏览器下载（开发环境）
+        if (typeof window !== 'undefined') {
+            console.log('Falling back to browser download for development');
+            await downloadImageInBrowser(imageDataUrl, finalFilename);
+            return finalFilename;
+        }
+        
+        console.error('Error saving image:', error);
         return '';
     }
 }
