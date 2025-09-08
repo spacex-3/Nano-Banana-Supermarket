@@ -7,8 +7,10 @@ services:
       - "3000:80"
     environment:
       - NODE_ENV=production
-      - API_KEY=sk-BPG9OYmbBPJc3xJX8qpuEoAfvaHhCPwu2j8MX59F4Mg4RcPD
-      - API_BASE_URL=https://api.ephone.ai
+      - API_KEY=${API_KEY}
+      - API_BASE_URL=${API_BASE_URL}
+    env_file:
+      - .env.local
     volumes:
       - ./data:/app/data
     restart: unless-stopped
