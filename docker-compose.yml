@@ -2,18 +2,15 @@ version: '3.8'
 
 services:
   nano-banana-supermarket:
-    build: 
-      context: .
-      dockerfile: Dockerfile
-      args:
-        - GEMINI_API_KEY=${GEMINI_API_KEY}
-        - API_BASE_URL=${API_BASE_URL}
+    image: lisankai93/nano-banana-supermarket:latest
     ports:
       - "3000:80"
     environment:
       - NODE_ENV=production
-    env_file:
-      - .env.local
+      - API_KEY=sk-BPG9OYmbBPJc3xJX8qpuEoAfvaHhCPwu2j8MX59F4Mg4RcPD
+      - API_BASE_URL=https://api.ephone.ai
+    volumes:
+      - ./data:/app/data
     restart: unless-stopped
     networks:
       - app-network
@@ -22,6 +19,5 @@ networks:
   app-network:
     driver: bridge
 
-# 可选：如果需要数据持久化
 volumes:
   app-data:
