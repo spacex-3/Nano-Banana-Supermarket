@@ -7,6 +7,8 @@ services:
       - NODE_ENV=production
       - API_KEY=${API_KEY}
       - API_BASE_URL=${API_BASE_URL}
+      - ADMIN_USERNAME=${ADMIN_USERNAME:-admin}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin123}
     volumes:
       - ./data:/app/data
     restart: unless-stopped

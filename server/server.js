@@ -100,6 +100,25 @@ app.post('/api/user-info', (req, res) => {
     }
 });
 
+// 管理员登录 API
+app.post('/api/admin/login', (req, res) => {
+    const { username, password } = req.body;
+    
+    if (!username || !password) {
+        return res.status(400).json({ error: '用户名和密码不能为空' });
+    }
+    
+    // 从环境变量获取管理员凭据
+    const adminUsername = process.env.ADMIN_USERNAME || 'admin';
+    const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
+    
+    if (username === adminUsername && password === adminPassword) {
+        res.json({ success: true, message: '管理员登录成功' });
+    } else {
+        res.status(401).json({ error: '用户名或密码错误' });
+    }
+});
+
 // 管理员获取所有用户 API
 app.get('/api/admin/users', (req, res) => {
     // 简单的管理员验证，生产环境应该使用更安全的方式

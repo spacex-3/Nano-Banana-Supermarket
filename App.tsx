@@ -18,6 +18,7 @@ import HistoryPanel from './components/HistoryPanel';
 import Login from './components/Login';
 import UserInfo from './components/UserInfo';
 import AdminPanel from './components/AdminPanel';
+import AdminLogin from './components/AdminLogin';
 
 type ActiveTool = 'mask' | 'none';
 
@@ -38,6 +39,10 @@ const App: React.FC = () => {
     }
   });
   const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
+  const [showAdminLogin, setShowAdminLogin] = useState(false);
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(() => {
+    return localStorage.getItem('adminLoggedIn') === 'true';
+  });
   const [transformations, setTransformations] = useState<Transformation[]>(() => {
     try {
       const savedOrder = localStorage.getItem('transformationOrder');
@@ -284,13 +289,47 @@ const App: React.FC = () => {
       // Ctrl + Shift + A 打开管理员面板
       if (event.ctrlKey && event.shiftKey && event.key === 'A') {
         event.preventDefault();
-        setIsAdminPanelOpen(true);
+        handleAdminAccess();
+      }
+      // Ctrl + Alt + Admin (Ctrl + Alt + A + D + M) - 管理员模式
+      if (event.ctrlKey && event.altKey && event.shiftKey && event.key === 'M') {
+        event.preventDefault();
+        const adminUser = {
+          phone: 'ADMIN',
+          remainingUses: 999,
+          imagesGenerated: 0
+        };
+        setUser(adminUser);
+        localStorage.setItem('user', JSON.stringify(adminUser));
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
+
+  const handleAdminAccess = () => {
+    if (isAdminAuthenticated) {
+      setIsAdminPanelOpen(true);
+    } else {
+      setShowAdminLogin(true);
+    }
+  };
+
+  const handleAdminLoginSuccess = () => {
+    setIsAdminAuthenticated(true);
+    setShowAdminLogin(false);
+    setIsAdminPanelOpen(true);
+    localStorage.setItem('adminLoggedIn', 'true');
+  };
+
+  const handleAdminLoginClose = () => {
+    setShowAdminLogin(false);
+  };
+
+  const handleAdminPanelClose = () => {
+    setIsAdminPanelOpen(false);
+  };
 
 
   const handleUseImageAsInput = useCallback(async (imageUrl: string) => {
@@ -368,7 +407,7 @@ const App: React.FC = () => {
           <div className="flex items-center gap-4">
             {/* 管理员入口 */}
             <button
-              onClick={() => setIsAdminPanelOpen(true)}
+              onClick={handleAdminAccess}
               className="text-xs opacity-30 hover:opacity-100 transition-opacity duration-200 px-2 py-1 rounded"
               title="管理员面板 (Ctrl+Shift+A)"
             >
@@ -543,7 +582,15 @@ const App: React.FC = () => {
 
       {/* 管理员面板 */}
       {isAdminPanelOpen && (
-        <AdminPanel onClose={() => setIsAdminPanelOpen(false)} />
+        <AdminPanel onClose={handleAdminPanelClose} />
+      )}
+
+      {/* 管理员登录 */}
+      {showAdminLogin && (
+        <AdminLogin 
+          onAdminLoginSuccess={handleAdminLoginSuccess} 
+          onClose={handleAdminLoginClose} 
+        />
       )}
     </div>
   );
