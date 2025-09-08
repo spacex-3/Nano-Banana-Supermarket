@@ -23,7 +23,7 @@ WORKDIR /app
 COPY server/package.json server/package-lock.json ./
 RUN npm ci --production
 
-COPY server/server.js ./
+COPY server/ ./
 
 # 最终阶段 - 运行环境
 FROM node:20-alpine
