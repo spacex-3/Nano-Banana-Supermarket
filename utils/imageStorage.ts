@@ -55,10 +55,10 @@ async function downloadImageInBrowser(imageUrl: string, filename: string): Promi
 // API 服务器端图片保存功能
 async function saveImageViaAPI(imageUrl: string, filename?: string, transformationTitle?: string, step?: string): Promise<string> {
     try {
-        // 根据环境选择 API 基础 URL
-        const apiBaseUrl = typeof window !== 'undefined' && window.location.hostname === 'localhost' 
-            ? 'http://localhost:3001'  // 开发环境
-            : '';                      // 生产环境通过 nginx 代理
+        // 开发环境仍然需要调用 localhost:3001，生产环境调用相同域名的 /api
+        const apiBaseUrl = typeof window !== 'undefined' && window.location.hostname === 'localhost' && window.location.port === '5173'
+            ? 'http://localhost:3001'  // 开发环境 (Vite dev server)
+            : '';                      // 生产环境 (同一个服务器)
             
         const response = await fetch(`${apiBaseUrl}/api/save-image`, {
             method: 'POST',

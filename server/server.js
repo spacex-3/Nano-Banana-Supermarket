@@ -4,7 +4,7 @@ const path = require('path');
 const cors = require('cors');
 
 const app = express();
-const PORT = 3001;
+const PORT = 80;
 
 // 根据环境选择数据目录
 const DATA_DIR = process.env.NODE_ENV === 'production' ? '/app/data' : path.join(__dirname, '..', 'data');
@@ -17,6 +17,15 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 // 确保 data 目录存在
 if (!fs.existsSync(DATA_DIR)) {
     fs.mkdirSync(DATA_DIR, { recursive: true });
+}
+
+// 服务静态文件 (前端)
+const publicDir = process.env.NODE_ENV === 'production' 
+    ? path.join(__dirname, 'public')
+    : path.join(__dirname, '..', 'dist');
+
+if (fs.existsSync(publicDir)) {
+    app.use(express.static(publicDir));
 }
 
 // 图片保存 API
@@ -84,7 +93,22 @@ app.get('/api/images', (req, res) => {
     }
 });
 
+// SPA fallback - 将所有非 API 路由指向 index.html
+app.get('*', (req, res) => {
+    if (req.path.startsWith('/api/')) {
+        return res.status(404).json({ error: 'API endpoint not found' });
+    }
+    
+    const indexPath = path.join(publicDir, 'index.html');
+    if (fs.existsSync(indexPath)) {
+        res.sendFile(indexPath);
+    } else {
+        res.status(404).send('Frontend not built');
+    }
+});
+
 app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Image server running on port ${PORT}`);
+    console.log(`Server running on port ${PORT}`);
     console.log(`Data directory: ${DATA_DIR}`);
+    console.log(`Static files: ${publicDir}`);
 });

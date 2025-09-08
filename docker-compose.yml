@@ -1,42 +1,12 @@
 services:
-  # 前端应用 (静态文件服务)
-  frontend:
+  nano-banana-supermarket:
     image: lisankai93/nano-banana-supermarket:latest
+    ports:
+      - "80:80"
     environment:
       - NODE_ENV=production
       - API_KEY=${API_KEY}
       - API_BASE_URL=${API_BASE_URL}
-    networks:
-      - app-network
-    restart: unless-stopped
-
-  # API 服务器
-  api-server:
-    build:
-      context: .
-      dockerfile: Dockerfile.server
-    environment:
-      - NODE_ENV=production
     volumes:
       - ./data:/app/data
-    networks:
-      - app-network
     restart: unless-stopped
-
-  # Nginx 代理
-  nginx:
-    image: nginx:alpine
-    ports:
-      - "80:80"
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
-    networks:
-      - app-network
-    depends_on:
-      - frontend
-      - api-server
-    restart: unless-stopped
-
-networks:
-  app-network:
-    driver: bridge
