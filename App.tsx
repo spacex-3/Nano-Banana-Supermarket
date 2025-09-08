@@ -17,6 +17,7 @@ import MultiImageUploader from './components/MultiImageUploader';
 import HistoryPanel from './components/HistoryPanel';
 import Login from './components/Login';
 import UserInfo from './components/UserInfo';
+import AdminPanel from './components/AdminPanel';
 
 type ActiveTool = 'mask' | 'none';
 
@@ -36,6 +37,7 @@ const App: React.FC = () => {
       return null;
     }
   });
+  const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
   const [transformations, setTransformations] = useState<Transformation[]>(() => {
     try {
       const savedOrder = localStorage.getItem('transformationOrder');
@@ -276,6 +278,20 @@ const App: React.FC = () => {
     }
   }, [user, primaryImageUrl, secondaryImageUrl, selectedTransformation, maskDataUrl, customPrompt, transformations]);
 
+  // 管理员快捷键监听
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Ctrl + Shift + A 打开管理员面板
+      if (event.ctrlKey && event.shiftKey && event.key === 'A') {
+        event.preventDefault();
+        setIsAdminPanelOpen(true);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
 
   const handleUseImageAsInput = useCallback(async (imageUrl: string) => {
     if (!imageUrl) return;
@@ -349,16 +365,26 @@ const App: React.FC = () => {
           <h1 className="text-2xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-yellow-400 cursor-pointer" onClick={handleResetApp}>
             🍌 香蕉超市
           </h1>
-          <button
-            onClick={toggleHistoryPanel}
-            className="flex items-center gap-2 py-2 px-3 text-sm font-semibold text-gray-200 bg-gray-800/50 rounded-md hover:bg-gray-700/50 transition-colors duration-200"
-            aria-label="Toggle generation history"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
-            </svg>
-            <span>历史记录</span>
-          </button>
+          <div className="flex items-center gap-4">
+            {/* 管理员入口 */}
+            <button
+              onClick={() => setIsAdminPanelOpen(true)}
+              className="text-xs opacity-30 hover:opacity-100 transition-opacity duration-200 px-2 py-1 rounded"
+              title="管理员面板 (Ctrl+Shift+A)"
+            >
+              ⚙️
+            </button>
+            <button
+              onClick={toggleHistoryPanel}
+              className="flex items-center gap-2 py-2 px-3 text-sm font-semibold text-gray-200 bg-gray-800/50 rounded-md hover:bg-gray-700/50 transition-colors duration-200"
+              aria-label="Toggle generation history"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+              </svg>
+              <span>历史记录</span>
+            </button>
+          </div>
         </div>
       </header>
 
@@ -513,6 +539,11 @@ const App: React.FC = () => {
       {/* 登录界面 */}
       {!user && (
         <Login onLoginSuccess={setUser} />
+      )}
+
+      {/* 管理员面板 */}
+      {isAdminPanelOpen && (
+        <AdminPanel onClose={() => setIsAdminPanelOpen(false)} />
       )}
     </div>
   );
