@@ -1,14 +1,31 @@
 import type { GeneratedContent } from '../types';
 
-if (!process.env.API_KEY) {
-  throw new Error("API_KEY environment variable is not set.");
+// 获取运行时配置（优先使用运行时配置，fallback 到构建时配置）
+const getConfig = () => {
+  // @ts-ignore - window.APP_CONFIG 在运行时注入
+  if (typeof window !== 'undefined' && window.APP_CONFIG) {
+    // @ts-ignore
+    return window.APP_CONFIG;
+  }
+  
+  // Fallback 到构建时配置
+  return {
+    API_KEY: process.env.API_KEY || 'not-set',
+    API_BASE_URL: process.env.API_BASE_URL || 'https://api.ephone.ai'
+  };
+};
+
+const config = getConfig();
+
+if (!config.API_KEY || config.API_KEY === 'not-set') {
+  throw new Error("API_KEY is not configured. Please set it in docker-compose environment variables.");
 }
 
-if (!process.env.API_BASE_URL) {
-  throw new Error("API_BASE_URL environment variable is not set.");
+if (!config.API_BASE_URL) {
+  throw new Error("API_BASE_URL is not configured.");
 }
 
-const API_BASE_URL = process.env.API_BASE_URL;
+const API_BASE_URL = config.API_BASE_URL;
 const MODEL = "gemini-2.5-flash-image-preview";
 
 export async function editImage(
@@ -63,14 +80,15 @@ export async function editImage(
 
     console.log('API Request Details:');
     console.log('URL:', `${API_BASE_URL}/v1/chat/completions`);
-    console.log('API_KEY exists:', !!process.env.API_KEY);
-    console.log('API_KEY length:', process.env.API_KEY?.length);
-    console.log('API_KEY starts with sk-:', process.env.API_KEY?.startsWith('sk-'));
+    console.log('API_KEY exists:', !!config.API_KEY);
+    console.log('API_KEY length:', config.API_KEY?.length);
+    console.log('API_KEY starts with sk-:', config.API_KEY?.startsWith('sk-'));
+    console.log('Using runtime config:', typeof window !== 'undefined' && window.APP_CONFIG ? 'YES' : 'NO');
     
     const response = await fetch(`${API_BASE_URL}/v1/chat/completions`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${process.env.API_KEY!}`,
+        'Authorization': `Bearer ${config.API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
