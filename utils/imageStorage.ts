@@ -57,8 +57,8 @@ async function saveImageViaAPI(imageUrl: string, filename?: string, transformati
     try {
         // 根据环境选择 API 基础 URL
         const apiBaseUrl = typeof window !== 'undefined' && window.location.hostname === 'localhost' 
-            ? 'http://localhost:3001' 
-            : '';
+            ? 'http://localhost:3001'  // 开发环境
+            : '';                      // 生产环境通过 nginx 代理
             
         const response = await fetch(`${apiBaseUrl}/api/save-image`, {
             method: 'POST',
