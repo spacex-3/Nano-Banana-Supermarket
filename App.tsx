@@ -81,6 +81,43 @@ const App: React.FC = () => {
   const [history, setHistory] = useState<GeneratedContent[]>([]);
   const [isHistoryPanelOpen, setIsHistoryPanelOpen] = useState<boolean>(false);
   
+  // 从服务器加载用户历史记录
+  const loadUserHistory = useCallback(async (phone: string) => {
+    try {
+      const response = await fetch('/api/user/images', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ phone }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.images) {
+          // 转换服务器数据格式为前端历史记录格式
+          const serverHistory: GeneratedContent[] = data.images.map((img: any) => ({
+            imageUrl: img.imageUrl,
+            text: `${img.title} (${img.type})`,
+            secondaryImageUrl: null, // 服务器目前不存储中间结果
+          }));
+          setHistory(serverHistory);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load user history:', error);
+    }
+  }, []);
+
+  // 当用户登录时加载历史记录
+  useEffect(() => {
+    if (user && user.phone !== 'ADMIN') {
+      loadUserHistory(user.phone);
+    } else {
+      setHistory([]); // 如果没有用户或是管理员，清空历史
+    }
+  }, [user, loadUserHistory]);
+  
   useEffect(() => {
     try {
       const orderToSave = transformations.map(t => t.title);
@@ -230,11 +267,14 @@ const App: React.FC = () => {
                     };
                     setUser(updatedUser);
                     localStorage.setItem('user', JSON.stringify(updatedUser));
+                    
+                    // 重新加载历史记录以同步最新生成的图片
+                    await loadUserHistory(user.phone);
                 }
             }
             
             setGeneratedContent(finalResult);
-            setHistory(prev => [finalResult, ...prev]);
+            // 注意：不再手动添加到 history，而是依靠服务器同步
 
         } else { // Single-step generation
              let secondaryImagePayload = null;
@@ -268,11 +308,14 @@ const App: React.FC = () => {
                     };
                     setUser(updatedUser);
                     localStorage.setItem('user', JSON.stringify(updatedUser));
+                    
+                    // 重新加载历史记录以同步最新生成的图片
+                    await loadUserHistory(user.phone);
                 }
             }
 
             setGeneratedContent(result);
-            setHistory(prev => [result, ...prev]);
+            // 注意：不再手动添加到 history，而是依靠服务器同步
         }
     } catch (err) {
       console.error(err);

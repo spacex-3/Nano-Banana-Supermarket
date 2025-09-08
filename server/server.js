@@ -210,6 +210,80 @@ app.post('/api/save-image', requireAuth, async (req, res) => {
     }
 });
 
+// 获取用户图片历史 API
+app.post('/api/user/images', requireAuth, (req, res) => {
+    try {
+        const { phone } = req.body;
+        
+        // 读取 data 目录中该用户的所有图片
+        const files = fs.readdirSync(DATA_DIR).filter(file => {
+            const isImageFile = file.toLowerCase().endsWith('.png') || 
+                              file.toLowerCase().endsWith('.jpg') || 
+                              file.toLowerCase().endsWith('.jpeg');
+            const belongsToUser = file.startsWith(phone + '-');
+            return isImageFile && belongsToUser;
+        });
+
+        // 按创建时间排序（最新的在前）
+        const imageHistory = files.map(filename => {
+            const filePath = path.join(DATA_DIR, filename);
+            const stats = fs.statSync(filePath);
+            
+            // 解析文件名格式：手机号-生成类型-标题-时间戳.png
+            const parts = filename.replace(/\.(png|jpg|jpeg)$/i, '').split('-');
+            const phone_part = parts[0];
+            const type = parts[1] || 'unknown';
+            const title = parts.slice(2, -1).join('-') || 'generated';
+            const timestamp = parts[parts.length - 1];
+
+            // 生成可访问的图片URL
+            const imageUrl = `/api/images/${filename}`;
+            
+            return {
+                imageUrl,
+                filename,
+                type,
+                title,
+                timestamp: parseInt(timestamp) || stats.ctimeMs,
+                createdAt: stats.ctime,
+                size: stats.size
+            };
+        }).sort((a, b) => b.timestamp - a.timestamp);
+
+        res.json({
+            success: true,
+            images: imageHistory,
+            count: imageHistory.length
+        });
+        
+    } catch (error) {
+        console.error('Error fetching user images:', error);
+        res.status(500).json({ error: 'Failed to fetch user images', details: error.message });
+    }
+});
+
+// 提供图片文件访问
+app.get('/api/images/:filename', (req, res) => {
+    try {
+        const { filename } = req.params;
+        const filePath = path.join(DATA_DIR, filename);
+        
+        if (!fs.existsSync(filePath)) {
+            return res.status(404).json({ error: 'Image not found' });
+        }
+        
+        // 检查文件是否为图片
+        if (!filename.match(/\.(png|jpg|jpeg)$/i)) {
+            return res.status(400).json({ error: 'Invalid file type' });
+        }
+        
+        res.sendFile(filePath);
+    } catch (error) {
+        console.error('Error serving image:', error);
+        res.status(500).json({ error: 'Failed to serve image' });
+    }
+});
+
 // 健康检查
 app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', dataDir: DATA_DIR });
