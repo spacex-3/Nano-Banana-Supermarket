@@ -57,6 +57,6 @@ jobs:
         cache-from: type=gha
         cache-to: type=gha,mode=max
         build-args: |
-          API_KEY=${{ secrets.GEMINI_API_KEY }}
-          GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
+          API_KEY=${{ secrets.API_KEY }}
+          GEMINI_API_KEY=${{ secrets.API_KEY }}
           API_BASE_URL=${{ secrets.API_BASE_URL }}

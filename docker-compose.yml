@@ -9,8 +9,6 @@ services:
       - NODE_ENV=production
       - API_KEY=${API_KEY}
       - API_BASE_URL=${API_BASE_URL}
-    env_file:
-      - .env.local
     volumes:
       - ./data:/app/data
     restart: unless-stopped
