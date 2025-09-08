@@ -8,7 +8,8 @@ export default defineConfig(({ mode }) => {
     const apiKey = env.API_KEY || env.GEMINI_API_KEY || 'not-set';
     const apiBaseUrl = env.API_BASE_URL || 'https://api.ephone.ai';
     
-    console.log('Building with API_KEY:', apiKey ? 'SET' : 'NOT SET');
+    console.log('Building with API_KEY:', apiKey === 'not-set' ? 'NOT SET (using default)' : 'SET');
+    console.log('API_KEY value:', apiKey.substring(0, 10) + '...');
     console.log('Building with API_BASE_URL:', apiBaseUrl);
     
     return {

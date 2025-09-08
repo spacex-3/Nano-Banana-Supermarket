@@ -61,6 +61,12 @@ export async function editImage(
       });
     }
 
+    console.log('API Request Details:');
+    console.log('URL:', `${API_BASE_URL}/v1/chat/completions`);
+    console.log('API_KEY exists:', !!process.env.API_KEY);
+    console.log('API_KEY length:', process.env.API_KEY?.length);
+    console.log('API_KEY starts with sk-:', process.env.API_KEY?.startsWith('sk-'));
+    
     const response = await fetch(`${API_BASE_URL}/v1/chat/completions`, {
       method: 'POST',
       headers: {
@@ -81,6 +87,9 @@ export async function editImage(
 
     if (!response.ok) {
       const errorData = await response.text();
+      console.error('API Error Response:', response.status, response.statusText);
+      console.error('API Error Data:', errorData);
+      
       let errorMessage = "The model did not return an image. It might have refused the request. Please try a different image or prompt.";
       
       try {
@@ -89,7 +98,8 @@ export async function editImage(
           errorMessage = parsedError.error.message;
         }
       } catch (e) {
-        // Not JSON, use default message
+        // Not JSON, use original error data
+        errorMessage = errorData || `HTTP ${response.status}: ${response.statusText}`;
       }
       
       throw new Error(errorMessage);

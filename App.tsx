@@ -11,7 +11,6 @@ import ErrorMessage from './components/ErrorMessage';
 import ImageEditorCanvas from './components/ImageEditorCanvas';
 // Fix: Removed unused and non-existent 'fileToDataUrl' import.
 import { dataUrlToFile, embedWatermark, loadImage, resizeImageToMatch, downloadImage } from './utils/fileUtils';
-import { saveImageLocally } from './utils/imageStorage';
 import ImagePreviewModal from './components/ImagePreviewModal';
 import MultiImageUploader from './components/MultiImageUploader';
 import HistoryPanel from './components/HistoryPanel';
@@ -182,15 +181,6 @@ const App: React.FC = () => {
                 secondaryImageUrl: stepOneResult.imageUrl, // Store intermediate result
             };
             
-            // 自动保存生成的图片到本地
-            if (finalResult.imageUrl) {
-                try {
-                    await saveImageLocally(finalResult.imageUrl, `two-step-${selectedTransformation.title}-${Date.now()}.png`);
-                } catch (saveError) {
-                    console.warn('Failed to save image locally:', saveError);
-                }
-            }
-            
             setGeneratedContent(finalResult);
             setHistory(prev => [finalResult, ...prev]);
 
@@ -212,15 +202,6 @@ const App: React.FC = () => {
 
             if (result.imageUrl) {
                 result.imageUrl = await embedWatermark(result.imageUrl, "Nano Banana Supermarket");
-            }
-
-            // 自动保存生成的图片到本地
-            if (result.imageUrl) {
-                try {
-                    await saveImageLocally(result.imageUrl, `single-${selectedTransformation.title}-${Date.now()}.png`);
-                } catch (saveError) {
-                    console.warn('Failed to save image locally:', saveError);
-                }
             }
 
             setGeneratedContent(result);
