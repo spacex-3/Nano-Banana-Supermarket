@@ -132,17 +132,30 @@ export async function editImage(
       const content = choice.message.content;
       
       // Extract text and image from markdown format
-      const imageRegex = /!\[image\]\(data:image\/[^;]+;base64,([^)]+)\)/;
-      const imageMatch = content.match(imageRegex);
+      const httpImageRegex = /!\[image\]\((https?:\/\/[^\s)]+)\)/;
+      const base64ImageRegex = /!\[image\]\(data:image\/[^;]+;base64,([^)]+)\)/;
       
-      if (imageMatch) {
-        const base64Data = imageMatch[1];
-        result.imageUrl = `data:image/png;base64,${base64Data}`;
+      // Try HTTP URL first
+      const httpMatch = content.match(httpImageRegex);
+      if (httpMatch) {
+        const imageUrl = httpMatch[1];
+        result.imageUrl = imageUrl;
         
         // Extract text (remove image markdown)
-        result.text = content.replace(imageRegex, '').trim();
+        result.text = content.replace(httpImageRegex, '').trim();
       } else {
-        result.text = content;
+        // Try base64 format
+        const base64Match = content.match(base64ImageRegex);
+        if (base64Match) {
+          const base64Data = base64Match[1];
+          result.imageUrl = `data:image/png;base64,${base64Data}`;
+          
+          // Extract text (remove image markdown)
+          result.text = content.replace(base64ImageRegex, '').trim();
+        } else {
+          // No image found, just text
+          result.text = content;
+        }
       }
     }
 
