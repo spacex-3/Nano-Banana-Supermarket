@@ -1,23 +1,13 @@
 version: '3.8'
 
 services:
-  nano-banana-supermarket:
-    image: lisankai93/nano-banana-supermarket:latest
+  # API 服务器
+  api-server:
+    build:
+      context: .
+      dockerfile: Dockerfile.server
     ports:
-      - "3000:80"
-    environment:
-      - NODE_ENV=production
-      - API_KEY=${API_KEY}
-      - API_BASE_URL=${API_BASE_URL}
+      - "3001:3001"
     volumes:
       - ./data:/app/data
     restart: unless-stopped
-    networks:
-      - app-network
-
-networks:
-  app-network:
-    driver: bridge
-
-volumes:
-  app-data:
