@@ -53,7 +53,7 @@ async function downloadImageInBrowser(imageUrl: string, filename: string): Promi
 }
 
 // API 服务器端图片保存功能
-async function saveImageViaAPI(imageUrl: string, filename?: string, transformationTitle?: string, step?: string): Promise<string> {
+async function saveImageViaAPI(imageUrl: string, filename?: string, transformationTitle?: string, step?: string, phone?: string): Promise<string> {
     try {
         // 开发环境仍然需要调用 localhost:3001，生产环境调用相同域名的 /api
         const apiBaseUrl = typeof window !== 'undefined' && window.location.hostname === 'localhost' && window.location.port === '5173'
@@ -69,7 +69,8 @@ async function saveImageViaAPI(imageUrl: string, filename?: string, transformati
                 imageUrl,
                 filename,
                 transformationTitle,
-                step
+                step,
+                phone
             })
         });
         
@@ -77,7 +78,7 @@ async function saveImageViaAPI(imageUrl: string, filename?: string, transformati
         
         if (result.success) {
             console.log(`Image saved to server via API: ${result.filename}`);
-            return result.path;
+            return result; // 返回完整的API响应，包含用户信息
         } else {
             throw new Error(result.error || 'API save failed');
         }
@@ -140,17 +141,19 @@ export async function saveImageToServer(imageDataUrl: string, filename?: string)
 }
 
 // 自动保存函数 - 尝试服务器端保存，失败则静默忽略
-export async function autoSaveImage(imageUrl: string, transformationTitle: string, step: 'single' | 'two-step' = 'single'): Promise<void> {
-    if (!imageUrl) return;
+export async function autoSaveImage(imageUrl: string, transformationTitle: string, step: 'single' | 'two-step' = 'single', phone?: string): Promise<any> {
+    if (!imageUrl || !phone) return null;
     
     try {
         const timestamp = Date.now();
-        const filename = `${step}-${transformationTitle.replace(/[^a-zA-Z0-9]/g, '-')}-${timestamp}.png`;
+        const filename = `${phone}-${step}-${transformationTitle.replace(/[^a-zA-Z0-9]/g, '-')}-${timestamp}.png`;
         
         // 优先尝试 API 保存
-        await saveImageViaAPI(imageUrl, filename, transformationTitle, step);
+        const result = await saveImageViaAPI(imageUrl, filename, transformationTitle, step, phone);
+        return result;
     } catch (error) {
         // 静默忽略保存错误，不影响用户体验
         console.log('Auto-save failed (this is normal in development environment):', error.message);
+        return null;
     }
 }

@@ -15,10 +15,27 @@ import { autoSaveImage } from './utils/imageStorage';
 import ImagePreviewModal from './components/ImagePreviewModal';
 import MultiImageUploader from './components/MultiImageUploader';
 import HistoryPanel from './components/HistoryPanel';
+import Login from './components/Login';
+import UserInfo from './components/UserInfo';
 
 type ActiveTool = 'mask' | 'none';
 
+interface User {
+  phone: string;
+  remainingUses: number;
+  imagesGenerated: number;
+}
+
 const App: React.FC = () => {
+  const [user, setUser] = useState<User | null>(() => {
+    try {
+      const savedUser = localStorage.getItem('user');
+      return savedUser ? JSON.parse(savedUser) : null;
+    } catch (e) {
+      console.error("Failed to load user from localStorage", e);
+      return null;
+    }
+  });
   const [transformations, setTransformations] = useState<Transformation[]>(() => {
     try {
       const savedOrder = localStorage.getItem('transformationOrder');
@@ -107,6 +124,18 @@ const App: React.FC = () => {
   };
 
   const handleGenerate = useCallback(async () => {
+    // 检查用户登录状态
+    if (!user) {
+      setError("请先登录");
+      return;
+    }
+
+    // 检查用户剩余使用次数
+    if (user.remainingUses <= 0) {
+      setError("生成次数已用完，请联系管理员");
+      return;
+    }
+
     if (!primaryImageUrl || !selectedTransformation) {
         setError("Please upload an image and select an effect.");
         return;
@@ -184,7 +213,17 @@ const App: React.FC = () => {
             
             // 自动保存生成的图片到服务器 data 文件夹
             if (finalResult.imageUrl) {
-                autoSaveImage(finalResult.imageUrl, selectedTransformation.title, 'two-step');
+                const saveResult = await autoSaveImage(finalResult.imageUrl, selectedTransformation.title, 'two-step', user?.phone);
+                // 更新用户信息
+                if (saveResult && user) {
+                    const updatedUser = { 
+                        ...user, 
+                        remainingUses: saveResult.remainingUses,
+                        imagesGenerated: saveResult.imagesGenerated
+                    };
+                    setUser(updatedUser);
+                    localStorage.setItem('user', JSON.stringify(updatedUser));
+                }
             }
             
             setGeneratedContent(finalResult);
@@ -212,7 +251,17 @@ const App: React.FC = () => {
 
             // 自动保存生成的图片到服务器 data 文件夹
             if (result.imageUrl) {
-                autoSaveImage(result.imageUrl, selectedTransformation.title, 'single');
+                const saveResult = await autoSaveImage(result.imageUrl, selectedTransformation.title, 'single', user?.phone);
+                // 更新用户信息
+                if (saveResult && user) {
+                    const updatedUser = { 
+                        ...user, 
+                        remainingUses: saveResult.remainingUses,
+                        imagesGenerated: saveResult.imagesGenerated
+                    };
+                    setUser(updatedUser);
+                    localStorage.setItem('user', JSON.stringify(updatedUser));
+                }
             }
 
             setGeneratedContent(result);
@@ -225,7 +274,7 @@ const App: React.FC = () => {
       setIsLoading(false);
       setLoadingMessage('');
     }
-  }, [primaryImageUrl, secondaryImageUrl, selectedTransformation, maskDataUrl, customPrompt, transformations]);
+  }, [user, primaryImageUrl, secondaryImageUrl, selectedTransformation, maskDataUrl, customPrompt, transformations]);
 
 
   const handleUseImageAsInput = useCallback(async (imageUrl: string) => {
@@ -312,6 +361,13 @@ const App: React.FC = () => {
           </button>
         </div>
       </header>
+
+      {/* 用户信息区域 */}
+      {user && (
+        <div className="container mx-auto px-4 py-3">
+          <UserInfo user={user} onLogout={() => setUser(null)} />
+        </div>
+      )}
 
       <main>
         {!selectedTransformation ? (
@@ -453,6 +509,11 @@ const App: React.FC = () => {
         onUseImage={handleUseHistoryImageAsInput}
         onDownload={handleDownloadFromHistory}
       />
+      
+      {/* 登录界面 */}
+      {!user && (
+        <Login onLoginSuccess={setUser} />
+      )}
     </div>
   );
 };

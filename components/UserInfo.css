@@ -1,0 +1,95 @@
+.user-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: white;
+  padding: 16px 20px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+  border: 2px solid #f0f0f0;
+}
+
+.user-details {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.user-phone {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.user-phone .label {
+  font-size: 14px;
+  color: #666;
+  font-weight: 500;
+}
+
+.user-phone .value {
+  font-size: 16px;
+  color: #333;
+  font-weight: 600;
+}
+
+.user-stats {
+  display: flex;
+  gap: 24px;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: #666;
+  font-weight: 500;
+}
+
+.stat-value {
+  font-size: 18px;
+  color: #007bff;
+  font-weight: 700;
+}
+
+.stat-value.warning {
+  color: #dc3545;
+}
+
+.logout-button {
+  background: #6c757d;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.logout-button:hover {
+  background: #5a6268;
+}
+
+@media (max-width: 768px) {
+  .user-info {
+    flex-direction: column;
+    gap: 16px;
+    align-items: stretch;
+  }
+  
+  .user-details {
+    align-items: center;
+  }
+  
+  .logout-button {
+    align-self: center;
+  }
+}

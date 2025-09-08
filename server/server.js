@@ -2,12 +2,16 @@ const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const cors = require('cors');
+const UserManager = require('./UserManager');
 
 const app = express();
 const PORT = 80;
 
 // 根据环境选择数据目录
 const DATA_DIR = process.env.NODE_ENV === 'production' ? '/app/data' : path.join(__dirname, '..', 'data');
+
+// 初始化用户管理器
+const userManager = new UserManager(DATA_DIR);
 
 // 中间件
 app.use(cors());
@@ -28,18 +32,130 @@ if (fs.existsSync(publicDir)) {
     app.use(express.static(publicDir));
 }
 
-// 图片保存 API
-app.post('/api/save-image', async (req, res) => {
+// 用户认证中间件
+function requireAuth(req, res, next) {
+    const { phone } = req.body;
+    
+    if (!phone) {
+        return res.status(401).json({ error: '请先登录' });
+    }
+    
+    const userInfo = userManager.getUserInfo(phone);
+    if (!userInfo) {
+        return res.status(401).json({ error: '用户不存在，请重新登录' });
+    }
+    
+    req.user = userInfo;
+    next();
+}
+
+// 用户注册 API
+app.post('/api/register', (req, res) => {
+    const { phone, password } = req.body;
+    
+    if (!phone || !password) {
+        return res.status(400).json({ error: '手机号和密码不能为空' });
+    }
+    
+    const result = userManager.registerUser(phone, password);
+    
+    if (result.success) {
+        res.json(result);
+    } else {
+        res.status(400).json({ error: result.message });
+    }
+});
+
+// 用户登录 API
+app.post('/api/login', (req, res) => {
+    const { phone, password } = req.body;
+    
+    if (!phone || !password) {
+        return res.status(400).json({ error: '手机号和密码不能为空' });
+    }
+    
+    const result = userManager.loginUser(phone, password);
+    
+    if (result.success) {
+        res.json(result);
+    } else {
+        res.status(400).json({ error: result.message });
+    }
+});
+
+// 获取用户信息 API
+app.post('/api/user-info', (req, res) => {
+    const { phone } = req.body;
+    
+    if (!phone) {
+        return res.status(400).json({ error: '缺少手机号' });
+    }
+    
+    const userInfo = userManager.getUserInfo(phone);
+    
+    if (userInfo) {
+        res.json({ success: true, user: userInfo });
+    } else {
+        res.status(404).json({ error: '用户不存在' });
+    }
+});
+
+// 管理员获取所有用户 API
+app.get('/api/admin/users', (req, res) => {
+    // 简单的管理员验证，生产环境应该使用更安全的方式
+    const adminToken = req.headers['admin-token'];
+    
+    if (adminToken !== 'admin-secret-token') {
+        return res.status(403).json({ error: '权限不足' });
+    }
+    
+    const allUsers = userManager.getAllUsers();
+    res.json(allUsers);
+});
+
+// 管理员重置用户使用次数 API
+app.post('/api/admin/reset-uses', (req, res) => {
+    const { phone, newUses } = req.body;
+    const adminToken = req.headers['admin-token'];
+    
+    if (adminToken !== 'admin-secret-token') {
+        return res.status(403).json({ error: '权限不足' });
+    }
+    
+    const result = userManager.resetUserUses(phone, newUses);
+    
+    if (result.success) {
+        res.json(result);
+    } else {
+        res.status(400).json({ error: result.message });
+    }
+});
+
+// 图片保存 API (需要用户认证)
+app.post('/api/save-image', requireAuth, async (req, res) => {
     try {
-        const { imageUrl, filename, transformationTitle, step = 'single' } = req.body;
+        const { imageUrl, filename, transformationTitle, step = 'single', phone } = req.body;
         
         if (!imageUrl) {
             return res.status(400).json({ error: 'Missing imageUrl' });
         }
-        
+
+        // 检查用户剩余使用次数
+        const userInfo = userManager.getUserInfo(phone);
+        if (userInfo.remainingUses <= 0) {
+            return res.status(403).json({ error: '生成次数已用完，请联系管理员' });
+        }
+
+        // 扣减使用次数
+        const useResult = userManager.useGeneration(phone);
+        if (!useResult.success) {
+            return res.status(400).json({ error: useResult.message });
+        }
+
         const timestamp = Date.now();
         const safeTitle = transformationTitle ? transformationTitle.replace(/[^a-zA-Z0-9]/g, '-') : 'generated';
-        const finalFilename = filename || `${step}-${safeTitle}-${timestamp}.png`;
+        // 文件名格式：手机号-生成类型-标题-时间戳.png
+        const finalFilename = filename || `${phone}-${step}-${safeTitle}-${timestamp}.png`;
         
         let buffer;
         
@@ -59,12 +175,14 @@ app.post('/api/save-image', async (req, res) => {
         const outputPath = path.join(DATA_DIR, finalFilename);
         fs.writeFileSync(outputPath, buffer);
         
-        console.log(`Image saved to server: ${outputPath}`);
+        console.log(`Image saved by user ${phone}: ${outputPath}`);
         res.json({ 
             success: true, 
             filename: finalFilename,
             path: outputPath,
-            size: buffer.length
+            size: buffer.length,
+            remainingUses: useResult.remainingUses,
+            imagesGenerated: useResult.imagesGenerated
         });
         
     } catch (error) {
