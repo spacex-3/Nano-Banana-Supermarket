@@ -22,22 +22,53 @@ async function downloadImageAsBase64(imageUrl: string): Promise<string> {
     }
 }
 
+// 浏览器端图片下载功能（开发环境使用）
+async function downloadImageInBrowser(imageUrl: string, filename: string): Promise<void> {
+    try {
+        let downloadUrl: string;
+        
+        if (imageUrl.startsWith('http')) {
+            // HTTP URL - 直接使用
+            downloadUrl = imageUrl;
+        } else if (imageUrl.startsWith('data:')) {
+            // Base64 - 直接使用
+            downloadUrl = imageUrl;
+        } else {
+            console.error('Invalid image URL format');
+            return;
+        }
+        
+        // 创建下载链接
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        console.log(`Image downloaded to browser: ${filename}`);
+    } catch (error) {
+        console.error('Error downloading image in browser:', error);
+    }
+}
+
 // 服务器端图片保存功能
 export async function saveImageToServer(imageDataUrl: string, filename?: string): Promise<string> {
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const finalFilename = filename || `generated-image-${timestamp}.png`;
+    
     // 检查是否在服务器环境中
     if (typeof window !== 'undefined') {
-        // 浏览器环境，跳过保存
-        console.log('Browser environment detected, skipping server-side image save');
-        return '';
+        // 浏览器环境，使用下载功能
+        console.log('Browser environment detected, downloading image instead of server save');
+        await downloadImageInBrowser(imageDataUrl, finalFilename);
+        return finalFilename;
     }
     
     try {
         // Node.js/服务器环境
         const fs = await import('fs');
         const path = await import('path');
-        
-        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-        const finalFilename = filename || `generated-image-${timestamp}.png`;
         
         // 确保 data 目录存在
         const dataDir = '/app/data';
