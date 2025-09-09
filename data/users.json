@@ -1,7 +1,25 @@
 {
-  "users": {},
+  "users": {
+    "13800138000": {
+      "phone": "13800138000",
+      "password": "test123",
+      "remainingUses": 10,
+      "createdAt": "2025-09-08T17:05:17.803Z",
+      "lastLoginAt": null,
+      "imagesGenerated": 0
+    },
+    "13900139000": {
+      "phone": "13900139000",
+      "username": "testuser",
+      "password": "test123",
+      "remainingUses": 10,
+      "createdAt": "2025-09-09T12:57:24.184Z",
+      "lastLoginAt": null,
+      "imagesGenerated": 0
+    }
+  },
   "admin": {
-    "totalUsers": 0,
+    "totalUsers": 2,
     "totalImages": 0
   }
 }

@@ -51,9 +51,13 @@ class UserManager {
     }
 
     // 用户注册
-    registerUser(phone, password) {
+    registerUser(phone, username, password) {
         if (!this.validatePhone(phone)) {
             return { success: false, message: '请输入有效的手机号码' };
+        }
+
+        if (!username || username.trim().length < 2) {
+            return { success: false, message: '用户名至少2个字符' };
         }
 
         if (!password || password.length < 6) {
@@ -66,9 +70,18 @@ class UserManager {
             return { success: false, message: '手机号已注册' };
         }
 
+        // 检查用户名是否已存在
+        const existingUser = Object.values(data.users).find(user => 
+            user.username && user.username.toLowerCase() === username.trim().toLowerCase()
+        );
+        if (existingUser) {
+            return { success: false, message: '用户名已存在' };
+        }
+
         // 创建新用户
         data.users[phone] = {
             phone: phone,
+            username: username.trim(),
             password: password, // 生产环境中应该加密
             remainingUses: 10,
             createdAt: new Date().toISOString(),
@@ -84,6 +97,7 @@ class UserManager {
                 message: '注册成功',
                 user: {
                     phone: phone,
+                    username: username.trim(),
                     remainingUses: 10
                 }
             };

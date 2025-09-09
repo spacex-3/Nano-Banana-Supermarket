@@ -51,13 +51,13 @@ function requireAuth(req, res, next) {
 
 // 用户注册 API
 app.post('/api/register', (req, res) => {
-    const { phone, password } = req.body;
+    const { phone, username, password } = req.body;
     
-    if (!phone || !password) {
-        return res.status(400).json({ error: '手机号和密码不能为空' });
+    if (!phone || !username || !password) {
+        return res.status(400).json({ error: '手机号、用户名和密码不能为空' });
     }
     
-    const result = userManager.registerUser(phone, password);
+    const result = userManager.registerUser(phone, username, password);
     
     if (result.success) {
         res.json(result);

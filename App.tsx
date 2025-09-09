@@ -24,6 +24,7 @@ type ActiveTool = 'mask' | 'none';
 
 interface User {
   phone: string;
+  username?: string;
   remainingUses: number;
   imagesGenerated: number;
 }

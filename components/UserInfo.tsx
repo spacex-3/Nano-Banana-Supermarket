@@ -3,6 +3,7 @@ import './UserInfo.css';
 
 interface User {
   phone: string;
+  username?: string;
   remainingUses: number;
   imagesGenerated: number;
 }
@@ -23,7 +24,7 @@ export default function UserInfo({ user, onLogout }: UserInfoProps) {
       <div className="user-details">
         <div className="user-phone">
           <span className="label">用户：</span>
-          <span className="value">{user.phone}</span>
+          <span className="value">{user.username || user.phone}</span>
         </div>
         <div className="user-stats">
           <div className="stat">
