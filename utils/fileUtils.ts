@@ -134,9 +134,23 @@ export const embedWatermark = (imageUrl: string, text: string): Promise<string> 
  * @param filename The desired name for the downloaded file.
  */
 export const downloadImage = (url: string, filename: string) => {
+  // 如果是API URL，转换为下载端点
+  let downloadUrl = url;
+  if (url.startsWith('/api/images/')) {
+    const imageName = url.replace('/api/images/', '');
+    downloadUrl = `/api/download/${imageName}`;
+    
+    // 确保文件名有正确的扩展名
+    if (!filename.match(/\.(png|jpg|jpeg)$/i)) {
+      const ext = imageName.match(/\.(png|jpg|jpeg)$/i)?.[0] || '.png';
+      filename = filename + ext;
+    }
+  }
+  
   const link = document.createElement('a');
-  link.href = url;
+  link.href = downloadUrl;
   link.download = filename;
+  link.style.display = 'none';
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);

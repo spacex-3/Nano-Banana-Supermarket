@@ -236,11 +236,15 @@ app.post('/api/user/images', requireAuth, (req, res) => {
             const title = parts.slice(2, -1).join('-') || 'generated';
             const timestamp = parts[parts.length - 1];
 
-            // 生成可访问的图片URL
+            // 生成可访问的图片URL - 使用相对路径，让浏览器自动添加域名
             const imageUrl = `/api/images/${filename}`;
+            
+            // 同时提供下载URL
+            const downloadUrl = `/api/download/${filename}`;
             
             return {
                 imageUrl,
+                downloadUrl,
                 filename,
                 type,
                 title,
@@ -277,10 +281,57 @@ app.get('/api/images/:filename', (req, res) => {
             return res.status(400).json({ error: 'Invalid file type' });
         }
         
+        // 设置正确的Content-Type和Content-Disposition头
+        const ext = path.extname(filename).toLowerCase();
+        let contentType = 'image/png';
+        if (ext === '.jpg' || ext === '.jpeg') {
+            contentType = 'image/jpeg';
+        }
+        
+        res.set({
+            'Content-Type': contentType,
+            'Content-Disposition': `inline; filename="${filename}"`,
+            'Cache-Control': 'public, max-age=31536000', // 1年缓存
+        });
+        
         res.sendFile(filePath);
     } catch (error) {
         console.error('Error serving image:', error);
         res.status(500).json({ error: 'Failed to serve image' });
+    }
+});
+
+// 专门的下载API端点
+app.get('/api/download/:filename', (req, res) => {
+    try {
+        const { filename } = req.params;
+        const filePath = path.join(DATA_DIR, filename);
+        
+        if (!fs.existsSync(filePath)) {
+            return res.status(404).json({ error: 'Image not found' });
+        }
+        
+        // 检查文件是否为图片
+        if (!filename.match(/\.(png|jpg|jpeg)$/i)) {
+            return res.status(400).json({ error: 'Invalid file type' });
+        }
+        
+        // 设置强制下载的Content-Disposition头
+        const ext = path.extname(filename).toLowerCase();
+        let contentType = 'image/png';
+        if (ext === '.jpg' || ext === '.jpeg') {
+            contentType = 'image/jpeg';
+        }
+        
+        res.set({
+            'Content-Type': contentType,
+            'Content-Disposition': `attachment; filename="${filename}"`,
+        });
+        
+        res.sendFile(filePath);
+    } catch (error) {
+        console.error('Error downloading image:', error);
+        res.status(500).json({ error: 'Failed to download image' });
     }
 });
 

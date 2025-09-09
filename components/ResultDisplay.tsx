@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import type { GeneratedContent } from '../types';
+import { downloadImage } from '../utils/fileUtils';
 
 interface ResultDisplayProps {
   content: GeneratedContent;
@@ -49,19 +50,30 @@ const ResultDisplay: React.FC<ResultDisplayProps> = ({ content, onUseImageAsInpu
 
   const handleMouseDown = () => setIsDragging(true);
 
-  const downloadImage = (url: string, filename: string) => {
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
   const handleDownload = () => {
     if (!content.imageUrl) return;
-    const fileExtension = content.imageUrl.split(';')[0].split('/')[1] || 'png';
-    downloadImage(content.imageUrl, `generated-image-${Date.now()}.${fileExtension}`);
+    
+    let fileExtension = 'png';
+    let filename = `generated-image-${Date.now()}`;
+    
+    // 如果是API URL，从URL路径中提取文件名和扩展名
+    if (content.imageUrl.startsWith('/api/images/')) {
+        const imageName = content.imageUrl.replace('/api/images/', '');
+        const extMatch = imageName.match(/\.(png|jpg|jpeg)$/i);
+        if (extMatch) {
+            fileExtension = extMatch[1];
+        }
+        filename = `generated-image-${Date.now()}.${fileExtension}`;
+    } else {
+        // data: URL的情况
+        const mimeMatch = content.imageUrl.match(/data:image\/(\w+);/);
+        if (mimeMatch) {
+            fileExtension = mimeMatch[1] === 'jpeg' ? 'jpg' : mimeMatch[1];
+        }
+        filename = `generated-image-${Date.now()}.${fileExtension}`;
+    }
+    
+    downloadImage(content.imageUrl, filename);
   };
 
   const handleDownloadBoth = () => {

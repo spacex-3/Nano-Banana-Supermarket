@@ -403,8 +403,27 @@ const App: React.FC = () => {
   };
   
   const handleDownloadFromHistory = (imageUrl: string, type: 'line-art' | 'final-result' | 'single-result') => {
-      const fileExtension = imageUrl.split(';')[0].split('/')[1] || 'png';
-      const filename = `${type}-${Date.now()}.${fileExtension}`;
+      let fileExtension = 'png';
+      let filename = `${type}-${Date.now()}`;
+      
+      // 如果是API URL，从URL路径中提取文件名和扩展名
+      if (imageUrl.startsWith('/api/images/')) {
+          const imageName = imageUrl.replace('/api/images/', '');
+          const extMatch = imageName.match(/\.(png|jpg|jpeg)$/i);
+          if (extMatch) {
+              fileExtension = extMatch[1];
+          }
+          // 使用时间戳作为文件名以避免冲突
+          filename = `${type}-${Date.now()}.${fileExtension}`;
+      } else {
+          // data: URL的情况
+          const mimeMatch = imageUrl.match(/data:image\/(\w+);/);
+          if (mimeMatch) {
+              fileExtension = mimeMatch[1] === 'jpeg' ? 'jpg' : mimeMatch[1];
+          }
+          filename = `${type}-${Date.now()}.${fileExtension}`;
+      }
+      
       downloadImage(imageUrl, filename);
   };
 
